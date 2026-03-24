@@ -239,23 +239,12 @@ details.tech .inner { padding: 1rem; }
   <h2>Datos de entrada</h2>
 
   <div class="tabs">
-    <button class="tab-btn active" data-tab="tab-csv">CSV local</button>
-    <button class="tab-btn" data-tab="tab-ticker">Ticker</button>
-  </div>
-
-  <!-- CSV TAB -->
-  <div class="tab-panel active" id="tab-csv">
-    <div class="drop-zone" id="drop-zone">
-      <span class="icon">&#128196;</span>
-      Arrastra un CSV aqui o <strong>haz click</strong> para seleccionar
-      <br><span style="font-size:.8rem;color:var(--muted)">Necesita columnas de fecha y precio de cierre (se detectan automaticamente)</span>
-      <input type="file" id="csv-file-input" accept=".csv,.tsv,.txt">
-    </div>
-    <div id="csv-file-name"></div>
+    <button class="tab-btn active" data-tab="tab-ticker">Ticker</button>
+    <button class="tab-btn" data-tab="tab-csv">CSV local</button>
   </div>
 
   <!-- TICKER TAB -->
-  <div class="tab-panel" id="tab-ticker">
+  <div class="tab-panel active" id="tab-ticker">
     <div class="alert" style="margin-bottom:.75rem">
       Los datos se obtienen de Yahoo Finance via un proxy publico (corsproxy.io).
       Si el proxy esta caido o lento, usa la pestania CSV.
@@ -275,6 +264,27 @@ details.tech .inner { padding: 1rem; }
       </div>
     </div>
     <div id="ticker-status"></div>
+  </div>
+
+  <!-- CSV TAB -->
+  <div class="tab-panel" id="tab-csv">
+    <div class="drop-zone" id="drop-zone">
+      <span class="icon">&#128196;</span>
+      Arrastra un CSV aqui o <strong>haz click</strong> para seleccionar
+      <br><span style="font-size:.8rem;color:var(--muted)">Necesita columnas de fecha y precio de cierre (se detectan automaticamente)</span>
+      <input type="file" id="csv-file-input" accept=".csv,.tsv,.txt">
+    </div>
+    <div id="csv-file-name"></div>
+    <details style="margin-top:.75rem;font-size:.85rem;color:var(--muted)">
+      <summary style="cursor:pointer;font-weight:600;color:var(--text)">Ejemplo de formato CSV</summary>
+      <pre style="margin-top:.5rem;background:var(--bg);padding:.75rem;border-radius:6px;font-size:.8rem;overflow-x:auto">Date,Close
+2024-01-02,472.65
+2024-01-03,468.38
+2024-01-04,467.22
+2024-01-05,469.42
+2024-01-08,472.36</pre>
+      <span>Las columnas pueden llamarse <b>Date/Fecha</b> y <b>Close/Cierre/Adj Close</b>. El separador puede ser coma o punto y coma.</span>
+    </details>
   </div>
 
   <!-- PARAMETERS -->

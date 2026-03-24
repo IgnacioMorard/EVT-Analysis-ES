@@ -1,0 +1,6 @@
+__pycache__/
+*.pyc
+.claude/
+evt_report.html
+*.html
+!web/index.html
