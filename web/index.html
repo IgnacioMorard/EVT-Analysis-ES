@@ -240,7 +240,7 @@ details.tech .inner { padding: 1rem; }
 
   <div class="tabs">
     <button class="tab-btn active" data-tab="tab-csv">CSV local</button>
-    <button class="tab-btn" data-tab="tab-ticker">Ticker (solo local)</button>
+    <button class="tab-btn" data-tab="tab-ticker">Ticker</button>
   </div>
 
   <!-- CSV TAB -->
@@ -257,15 +257,8 @@ details.tech .inner { padding: 1rem; }
   <!-- TICKER TAB -->
   <div class="tab-panel" id="tab-ticker">
     <div class="alert" style="margin-bottom:.75rem">
-      <strong>Solo funciona en servidor local.</strong>
-      Yahoo Finance bloquea peticiones desde otros dominios (CORS).
-      En GitHub Pages, usa la pestania CSV.
-      <a href="#" id="local-help-toggle" style="margin-left:.25rem">Como correrlo local?</a>
-      <div id="local-help" style="display:none;margin-top:.5rem;font-size:.82rem;background:#fff;padding:.5rem .75rem;border-radius:6px;border:1px solid var(--border)">
-        <code style="display:block;white-space:pre;font-size:.8rem;line-height:1.5">cd web
-python -m http.server 8000</code>
-        Luego abri <a href="http://localhost:8000" target="_blank">http://localhost:8000</a>
-      </div>
+      Los datos se obtienen de Yahoo Finance via un proxy publico (corsproxy.io).
+      Si el proxy esta caido o lento, usa la pestania CSV.
     </div>
     <div class="form-row">
       <div class="form-group" style="flex:2">
@@ -406,15 +399,6 @@ const resultsEl = $("#results");
 })();
 
 /* ============================================================
-   LOCAL HELP TOGGLE
-   ============================================================ */
-$("#local-help-toggle").addEventListener("click", (e) => {
-  e.preventDefault();
-  const el = $("#local-help");
-  el.style.display = el.style.display === "none" ? "block" : "none";
-});
-
-/* ============================================================
    TABS
    ============================================================ */
 $$(".tab-btn").forEach((btn) => {
@@ -463,9 +447,14 @@ let fetchAbort = null;
 tickerInput.addEventListener("keydown", (e) => {
   if (e.key === "Enter") fetchTicker();
 });
-tickerInput.addEventListener("blur", () => {
-  if (tickerInput.value.trim()) fetchTicker();
-});
+
+// Boton de buscar ticker (no en blur, para evitar disparos accidentales)
+const tickerBtn = document.createElement("button");
+tickerBtn.className = "btn btn-primary";
+tickerBtn.textContent = "Buscar";
+tickerBtn.style.cssText = "margin-top:.25rem;padding:.4rem 1rem;font-size:.85rem";
+tickerInput.parentElement.parentElement.appendChild(tickerBtn);
+tickerBtn.addEventListener("click", fetchTicker);
 
 async function fetchTicker() {
   const ticker = tickerInput.value.trim().toUpperCase();
@@ -478,18 +467,20 @@ async function fetchTicker() {
   tickerStatus.textContent = `Buscando ${ticker}...`;
   csvData = null;
 
-  const start = $("#date-start").value;
-  const end   = $("#date-end").value;
-  const p1 = Math.floor(new Date(start).getTime() / 1000);
-  const p2 = Math.floor(new Date(end).getTime() / 1000);
+  // Calcular rango como "Ny" (Yahoo range param)
+  const startD = new Date($("#date-start").value);
+  const endD = new Date($("#date-end").value);
+  const diffYears = Math.round((endD - startD) / (365.25 * 24 * 3600 * 1000));
+  const range = diffYears >= 10 ? "10y" : diffYears >= 5 ? "5y" : diffYears >= 2 ? "2y" : "1y";
 
-  const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(ticker)}`
-    + `?period1=${p1}&period2=${p2}&interval=1d&includeAdjustedClose=true`;
+  // Yahoo no envia CORS headers, asi que usamos un proxy publico
+  const yahooUrl = `https://query2.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(ticker)}`
+    + `?range=${range}&interval=1d`;
+  const proxyUrl = `https://corsproxy.io/?url=${encodeURIComponent(yahooUrl)}`;
 
   try {
-    const resp = await fetch(url, {
+    const resp = await fetch(proxyUrl, {
       signal: fetchAbort.signal,
-      headers: { "User-Agent": "Mozilla/5.0" },
     });
     if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
     const json = await resp.json();
@@ -518,12 +509,11 @@ async function fetchTicker() {
   } catch (err) {
     if (err.name === "AbortError") return;
     tickerStatus.className = "status-err";
-    const isLocal = location.hostname === "localhost" || location.hostname === "127.0.0.1";
-    tickerStatus.innerHTML = isLocal
-      ? `No se pudo obtener <b>${ticker}</b>. Verifica que el ticker sea valido en Yahoo Finance.`
-      : `No se pudo obtener <b>${ticker}</b>. Yahoo Finance bloquea peticiones desde este dominio (CORS). ` +
-        `<b>Solucion:</b> usa la pestania "CSV local" para subir un archivo, ` +
-        `o corré la app en un servidor local (<code>python -m http.server</code>).`;
+    tickerStatus.innerHTML =
+      `No se pudo obtener <b>${ticker}</b>. ` +
+      `Verifica que el ticker sea valido en Yahoo Finance, ` +
+      `o el proxy (corsproxy.io) puede estar temporalmente caido. ` +
+      `<b>Alternativa:</b> usa la pestania "CSV local".`;
     csvData = null;
   }
 }

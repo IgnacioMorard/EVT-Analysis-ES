@@ -1,0 +1,25 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python -c \"import ast; ast.parse\\(open\\(''data_loader.py''\\).read\\(\\)\\); print\\(''Sintaxis OK''\\)\")",
+      "Bash(python -c \"import ast; ast.parse\\(open\\(''data_loader.py'', encoding=''utf-8''\\).read\\(\\)\\); print\\(''Sintaxis OK''\\)\")",
+      "Bash(python -c \"import data_loader; print\\(''Import OK''\\); print\\(''detect:'', data_loader.detect_asset_type\\(''AAPL''\\)\\); print\\(''detect:'', data_loader.detect_asset_type\\(''BTC-USD''\\)\\); print\\(''detect:'', data_loader.detect_asset_type\\(''^GSPC''\\)\\); print\\(''detect:'', data_loader.detect_asset_type\\(''SPY''\\)\\); print\\(''detect:'', data_loader.detect_asset_type\\(''GGAL.BA''\\)\\)\")",
+      "Bash(python -c \":*)",
+      "Bash(python -c \"import ast; ast.parse\\(open\\(''evt_engine.py'', encoding=''utf-8''\\).read\\(\\)\\); print\\(''Sintaxis OK''\\)\")",
+      "Bash(python -c \"import ast; ast.parse\\(open\\(''report_generator.py'', encoding=''utf-8''\\).read\\(\\)\\); print\\(''Sintaxis OK''\\)\")",
+      "Bash(python -c \"import ast; ast.parse\\(open\\(''web/evt_core.py'', encoding=''utf-8''\\).read\\(\\)\\); print\\(''evt_core.py: OK''\\)\")",
+      "Bash(node -e \"require\\(''fs''\\).readFileSync\\(''web/worker.js'',''utf8''\\); console.log\\(''worker.js: OK''\\)\")",
+      "Bash(node -e \"require\\(''fs''\\).readFileSync\\(''web/sw.js'',''utf8''\\); console.log\\(''sw.js: OK''\\)\")",
+      "Bash(node -e \":*)",
+      "Bash(grep -n '^\\\\$\\\\$' METHODOLOGY.md)",
+      "Bash(grep -c '^\\\\$\\\\$' METHODOLOGY.md)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" \"https://query1.finance.yahoo.com/v8/finance/chart/SPY?period1=1577836800&period2=1735689600&interval=1d\")",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" -L \"https://query1.finance.yahoo.com/v7/finance/download/SPY?period1=1577836800&period2=1735689600&interval=1d&events=history\")",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" -H \"User-Agent: Mozilla/5.0\" \"https://query2.finance.yahoo.com/v8/finance/chart/SPY?range=5y&interval=1d\")",
+      "Bash(curl -s -w \"\\\\n\\\\nHTTP_CODE: %{http_code}\\\\nCONTENT_TYPE: %{content_type}\" -H \"Origin: http://localhost:8000\" -H \"User-Agent: Mozilla/5.0\" \"https://query2.finance.yahoo.com/v8/finance/chart/SPY?range=5y&interval=1d\")",
+      "Bash(curl -s -I -H \"Origin: http://localhost:8000\" \"https://query2.finance.yahoo.com/v8/finance/chart/SPY?range=1y&interval=1d\")",
+      "Bash(curl -s -D - -H \"Origin: http://localhost:8000\" \"https://query2.finance.yahoo.com/v8/finance/chart/SPY?range=5y&interval=1d\")",
+      "Bash(curl -s -D - \"https://query2.finance.yahoo.com/v8/finance/chart/SPY?range=5y&interval=1d\")"
+    ]
+  }
+}

@@ -5,7 +5,7 @@
 
 [SCREENSHOT]
 
-**[Abrir demo en vivo (GitHub Pages)](https://tu-usuario.github.io/Extreme-Value-Theory-EVT-/web/)**
+**[Abrir demo en vivo (GitHub Pages)](https://IgnacioMorard.github.io/EVT-Analysis-ES/web/)**
 
 ---
 
@@ -40,7 +40,7 @@ instalar nada.
 
 ### Opcion 1: Web (sin instalar Python)
 
-Abrí la [demo en GitHub Pages](https://tu-usuario.github.io/Extreme-Value-Theory-EVT-/web/),
+Abrí la [demo en GitHub Pages](https://IgnacioMorard.github.io/EVT-Analysis-ES/web/),
 **subi un CSV** y hacé click en "Analizar".
 Todo corre en tu browser via Pyodide — tus datos no salen de tu maquina.
 
@@ -53,7 +53,7 @@ Todo corre en tu browser via Pyodide — tus datos no salen de tu maquina.
 #### Correr la web en local (habilita tickers)
 
 ```bash
-git clone https://github.com/tu-usuario/Extreme-Value-Theory-EVT-.git
+git clone https://github.com/IgnacioMorard/EVT-Analysis-ES.git
 cd Extreme-Value-Theory-EVT-/web
 python -m http.server 8000
 ```
@@ -64,7 +64,7 @@ funciona con cualquier simbolo de Yahoo Finance (SPY, BTC-USD, ^GSPC, etc.).
 ### Opcion 2: Python
 
 ```bash
-git clone https://github.com/tu-usuario/Extreme-Value-Theory-EVT-.git
+git clone https://github.com/IgnacioMorard/EVT-Analysis-ES.git
 cd Extreme-Value-Theory-EVT-
 pip install -r requirements.txt
 ```
@@ -193,7 +193,7 @@ en la UI web.
 
 | Limitacion | Causa | Workaround |
 |---|---|---|
-| **Ticker no funciona en GitHub Pages** | Yahoo Finance no envia headers CORS | Subir CSV, o correr local con `python -m http.server` |
+| **Ticker depende de proxy externo** | Yahoo Finance no envia headers CORS; se usa corsproxy.io como proxy | Si el proxy esta caido, subir CSV manualmente |
 | **Primera carga lenta (~60 MB)** | Pyodide + numpy/pandas/scipy/matplotlib se descargan del CDN | Las siguientes cargas usan cache del browser |
 | **No funciona offline** | Pyodide se carga desde CDN (cross-origin, no se cachea por el Service Worker) | Requiere conexion a internet en cada sesion nueva |
 

@@ -22,8 +22,10 @@ async function initPyodide() {
   postMessage({ type: "init-progress", msg: "Inicializando Python..." });
   pyodide = await loadPyodide();
 
-  postMessage({ type: "init-progress", msg: "Instalando numpy, pandas, scipy, matplotlib..." });
-  await pyodide.loadPackage(["numpy", "pandas", "scipy", "matplotlib"]);
+  postMessage({ type: "init-progress", msg: "Instalando paquetes cientificos..." });
+  await pyodide.loadPackage("micropip");
+  const micropip = pyodide.pyimport("micropip");
+  await micropip.install(["numpy", "pandas", "scipy", "matplotlib"]);
 
   postMessage({ type: "init-progress", msg: "Cargando modulo EVT..." });
   const resp = await fetch("./evt_core.py");

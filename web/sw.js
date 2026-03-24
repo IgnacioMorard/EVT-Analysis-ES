@@ -46,17 +46,21 @@ self.addEventListener("activate", (e) => {
 });
 
 self.addEventListener("fetch", (e) => {
+  // Solo interceptar requests al mismo origen (archivos locales)
+  // Los requests cross-origin (proxies CORS, CDN, fonts) pasan directo al browser
+  const url = new URL(e.request.url);
+  if (url.origin !== self.location.origin) return;
+
   e.respondWith(
     caches.match(e.request).then((cached) => {
       if (cached) return cached;
       return fetch(e.request).then((response) => {
-        // Solo cachear respuestas del mismo origen (no CDN cross-origin)
         if (response && response.status === 200 && response.type === "basic") {
           const clone = response.clone();
           caches.open(CACHE_NAME).then((cache) => cache.put(e.request, clone));
         }
         return response;
-      }).catch(() => cached);
+      }).catch(() => cached || new Response("Offline", { status: 503 }));
     })
   );
 });
