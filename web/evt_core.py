@@ -304,9 +304,9 @@ def run_analysis(csv_text: str, config: Optional[Dict[str, Any]] = None) -> Dict
     sigma_gev = gev_raw["scale_hat"]
 
     if xi_gev >= 1.0:
-        diagnostics.append(f"GEV: xi={xi_gev:.4f} >= 1. ES sera infinito.")
+        diagnostics.append(f"GEV: xi={xi_gev:.4f} >= 1. ES será infinito.")
     elif xi_gev >= 0.5:
-        diagnostics.append(f"GEV: xi={xi_gev:.4f} alto (>= 0.5). Cola muy pesada.")
+        diagnostics.append(f"GEV: xi={xi_gev:.4f} alto (>= 0.5). Los estimadores pueden ser inestables.")
 
     rl_gev = gev_return_level(t_blocks, c_hat, mu_gev, sigma_gev)
     var_gev, es_gev = gev_var_es_block(p_conf, c_hat, mu_gev, sigma_gev)
@@ -325,7 +325,7 @@ def run_analysis(csv_text: str, config: Optional[Dict[str, Any]] = None) -> Dict
     if n_exc < 10:
         raise ValueError(
             f"Solo {n_exc} excesos con umbral al percentil {q_thresh}. "
-            "Baja el umbral o usa mas datos."
+            "Bajá el umbral o usá más datos."
         )
     if n_exc < 30:
         diagnostics.append(
@@ -337,9 +337,9 @@ def run_analysis(csv_text: str, config: Optional[Dict[str, Any]] = None) -> Dict
     beta_gpd = gpd_raw["beta_gpd"]
 
     if xi_gpd >= 1.0:
-        diagnostics.append(f"GPD: xi={xi_gpd:.4f} >= 1. ES sera infinito.")
+        diagnostics.append(f"GPD: xi={xi_gpd:.4f} >= 1. ES será infinito.")
     elif xi_gpd >= 0.5:
-        diagnostics.append(f"GPD: xi={xi_gpd:.4f} alto (>= 0.5). Cola muy pesada.")
+        diagnostics.append(f"GPD: xi={xi_gpd:.4f} alto (>= 0.5). Los estimadores pueden ser inestables.")
 
     rl_gpd = gpd_return_level(t_days, u, xi_gpd, beta_gpd, p_u)
     var_gpd_val = gpd_var(p_conf, u, xi_gpd, beta_gpd, p_u)

@@ -52,20 +52,14 @@ def _f6(value: float) -> str:
 
 
 def _xi_interpretation(xi: float) -> str:
-    """Devuelve una interpretación en lenguaje simple del parámetro de forma."""
+    """Devuelve una descripción técnica del parámetro de forma."""
     if xi > 0.5:
-        return ("Cola <strong>muy pesada</strong>. Los eventos extremos son "
-                "significativamente más frecuentes de lo que sugiere una "
-                "distribución normal. Se requiere cautela extra en la "
-                "gestión de riesgo.")
+        return ("&xi; > 0.5 (Fréchet). Revisar QQ-plot y estabilidad del ajuste.")
     if xi > 0:
-        return ("Cola <strong>pesada</strong>. Hay más riesgo de eventos "
-                "extremos del que asumiría un modelo con distribución normal.")
+        return ("&xi; > 0 (Fréchet). Distribución de cola sin cota superior finita.")
     if abs(xi) < 0.05:
-        return ("Cola similar a una distribución exponencial (tipo Gumbel). "
-                "El riesgo extremo es moderado.")
-    return ("Cola <strong>liviana</strong> (acotada). Los extremos tienen "
-            "un techo natural, lo cual limita las pérdidas máximas posibles.")
+        return ("&xi; &asymp; 0 (Gumbel). Cola de decaimiento exponencial.")
+    return ("&xi; < 0 (Weibull). Cola acotada — las pérdidas tienen un techo finito.")
 
 
 def _return_level_years(t_days: int) -> str:

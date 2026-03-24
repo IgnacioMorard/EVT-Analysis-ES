@@ -352,7 +352,7 @@ def run_evt_analysis(
     elif xi_gev >= 0.5:
         diagnostics.append(
             f"GEV: ξ = {xi_gev:.4f} es alto (≥ 0.5).  "
-            "Cola muy pesada — los estimadores pueden ser inestables."
+            "Los estimadores pueden ser inestables."
         )
 
     ret_level_gev = gev_return_level(t_blocks, c_hat, mu_gev, sigma_gev)
@@ -415,7 +415,7 @@ def run_evt_analysis(
     elif xi_gpd >= 0.5:
         diagnostics.append(
             f"GPD: ξ = {xi_gpd:.4f} es alto (≥ 0.5).  "
-            "Cola muy pesada — los estimadores pueden ser inestables."
+            "Los estimadores pueden ser inestables."
         )
 
     ret_level_gpd = gpd_return_level(t_days, u, xi_gpd, beta_gpd, p_u)

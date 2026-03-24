@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>EVT — Analisis de Riesgo Extremo</title>
+<title>EVT — Análisis de Riesgo Extremo</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
@@ -246,8 +246,9 @@ details.tech .inner { padding: 1rem; }
   <!-- TICKER TAB -->
   <div class="tab-panel active" id="tab-ticker">
     <div class="alert" style="margin-bottom:.75rem">
-      Los datos se obtienen de Yahoo Finance via un proxy publico (corsproxy.io).
-      Si el proxy esta caido o lento, usa la pestania CSV.
+      Los datos se obtienen de Yahoo Finance vía un proxy público (corsproxy.io).
+      Si el proxy está caído o lento, usá la pestaña CSV.<br>
+      <strong>Nota:</strong> La API de Yahoo Finance no dispone de más de 10 años de datos históricos, y para muchos tickers la muestra disponible es menor.
     </div>
     <div class="form-row">
       <div class="form-group" style="flex:2">
@@ -271,7 +272,7 @@ details.tech .inner { padding: 1rem; }
     <div class="drop-zone" id="drop-zone">
       <span class="icon">&#128196;</span>
       Arrastra un CSV aqui o <strong>haz click</strong> para seleccionar
-      <br><span style="font-size:.8rem;color:var(--muted)">Necesita columnas de fecha y precio de cierre (se detectan automaticamente)</span>
+      <br><span style="font-size:.8rem;color:var(--muted)">Necesita columnas de fecha y precio de cierre (se detectan automáticamente)</span>
       <input type="file" id="csv-file-input" accept=".csv,.tsv,.txt">
     </div>
     <div id="csv-file-name"></div>
@@ -288,7 +289,7 @@ details.tech .inner { padding: 1rem; }
   </div>
 
   <!-- PARAMETERS -->
-  <h3>Parametros del analisis</h3>
+  <h3>Parámetros del análisis</h3>
   <div class="form-row">
     <div class="form-group">
       <label>Block size</label>
@@ -307,7 +308,7 @@ details.tech .inner { padding: 1rem; }
       <input type="number" id="param-tblocks" value="100" min="10" max="10000">
     </div>
     <div class="form-group">
-      <label>T dias (GPD)</label>
+      <label>T días (GPD)</label>
       <input type="number" id="param-tdays" value="5000" min="100" max="100000">
     </div>
   </div>
@@ -317,6 +318,7 @@ details.tech .inner { padding: 1rem; }
     <button class="btn btn-secondary" id="btn-download" style="display:none">Descargar reporte HTML</button>
   </div>
   <div id="run-status" style="font-size:.85rem; margin-top:.5rem; min-height:1.2em;"></div>
+  <div id="quick-summary" style="display:none; margin-top:1rem; padding:1rem; background:var(--bg2); border:1px solid var(--border); border-radius:8px; font-size:.88rem;"></div>
 </div>
 
 <!-- ============================================================
@@ -341,9 +343,9 @@ details.tech .inner { padding: 1rem; }
     <h2>Block Maxima (GEV)</h2>
     <p id="gev-intro"></p>
     <div class="metric-grid" id="gev-metrics"></div>
-    <h3>Forma de la cola</h3>
+    <h3>Parámetro de forma (&xi;)</h3>
     <div class="interp" id="gev-xi-interp"></div>
-    <h3>Graficos</h3>
+    <h3>Gráficos</h3>
     <div class="fig-grid" id="gev-figs"></div>
   </div>
 
@@ -352,29 +354,29 @@ details.tech .inner { padding: 1rem; }
     <h2>Peaks Over Threshold (GPD)</h2>
     <p id="gpd-intro"></p>
     <div class="metric-grid" id="gpd-metrics"></div>
-    <h3>Forma de la cola</h3>
+    <h3>Parámetro de forma (&xi;)</h3>
     <div class="interp" id="gpd-xi-interp"></div>
-    <h3>Graficos</h3>
+    <h3>Gráficos</h3>
     <div class="fig-grid" id="gpd-figs"></div>
   </div>
 
   <!-- Losses dist -->
   <div class="card">
-    <h2>Distribucion de perdidas</h2>
+    <h2>Distribución de pérdidas</h2>
     <div class="fig-grid" id="extra-figs"></div>
   </div>
 
   <!-- TECHNICAL -->
   <details class="tech">
-    <summary>Parametros tecnicos completos (click para expandir)</summary>
+    <summary>Parámetros técnicos completos (click para expandir)</summary>
     <div class="inner" id="tech-content"></div>
   </details>
 </div>
 
 <div style="text-align:center;margin-top:2rem;padding-top:1rem;border-top:1px solid var(--border)">
   <button id="btn-update" style="background:none;border:1px solid var(--border);color:var(--muted);padding:.4rem 1rem;border-radius:6px;cursor:pointer;font-size:.8rem"
-    title="Borra la cache y recarga para obtener la ultima version de la app">
-    &#x1F504; Actualizar a ultima version
+    title="Borra la caché y recarga para obtener la última versión de la app">
+    &#x1F504; Actualizar a última versión
   </button>
 </div>
 
@@ -522,7 +524,7 @@ async function fetchTicker() {
     csvData = csv;
 
     tickerStatus.className = "status-ok";
-    tickerStatus.textContent = `${ticker}: ${timestamps.length} dias cargados`;
+    tickerStatus.textContent = `${ticker}: ${timestamps.length} días cargados`;
   } catch (err) {
     if (err.name === "AbortError") return;
     tickerStatus.className = "status-err";
@@ -530,7 +532,7 @@ async function fetchTicker() {
       `No se pudo obtener <b>${ticker}</b>. ` +
       `Verifica que el ticker sea valido en Yahoo Finance, ` +
       `o el proxy (corsproxy.io) puede estar temporalmente caido. ` +
-      `<b>Alternativa:</b> usa la pestania "CSV local".`;
+      `<b>Alternativa:</b> usá la pestaña "CSV local".`;
     csvData = null;
   }
 }
@@ -559,8 +561,9 @@ function initWorker() {
     else if (type === "result") {
       lastResults = e.data.data;
       renderResults(lastResults);
+      renderQuickSummary(lastResults);
       runStatus.className = "status-ok";
-      runStatus.textContent = "Analisis completado.";
+      runStatus.textContent = "Análisis completado.";
       btnRun.disabled = false;
       btnDl.style.display = "";
     }
@@ -581,14 +584,15 @@ btnRun.addEventListener("click", () => {
   if (!pyodideReady) return;
   if (!csvData) {
     runStatus.className = "status-err";
-    runStatus.textContent = "Primero carga datos (ticker o CSV).";
+    runStatus.textContent = "Primero cargá datos (ticker o CSV).";
     return;
   }
   btnRun.disabled = true;
   runStatus.className = "status-loading";
-  runStatus.textContent = "Ejecutando analisis EVT...";
+  runStatus.textContent = "Ejecutando análisis EVT...";
   resultsEl.style.display = "none";
   btnDl.style.display = "none";
+  $("#quick-summary").style.display = "none";
 
   const config = {
     block_size: parseInt($("#param-block").value),
@@ -609,15 +613,15 @@ function f4(v)  { return v == null ? "&infin;" : v.toFixed(4); }
 function f6(v)  { return v == null ? "&infin;" : v.toFixed(6); }
 
 function xiInterp(xi) {
-  if (xi > 0.5)  return `<strong>&xi; = ${f4(xi)}</strong> &mdash; Cola <b>muy pesada</b>. Los eventos extremos son significativamente mas frecuentes de lo que sugiere una distribucion normal.`;
-  if (xi > 0)    return `<strong>&xi; = ${f4(xi)}</strong> &mdash; Cola <b>pesada</b>. Hay mas riesgo de eventos extremos del que asumiria un modelo normal.`;
-  if (xi > -0.05) return `<strong>&xi; = ${f4(xi)}</strong> &mdash; Cola similar a una exponencial (tipo Gumbel). Riesgo extremo moderado.`;
-  return `<strong>&xi; = ${f4(xi)}</strong> &mdash; Cola <b>liviana</b> (acotada). Las perdidas tienen un techo natural.`;
+  if (xi > 0.5)  return `<strong>&xi; = ${f4(xi)}</strong> &mdash; &xi; > 0.5 (Fréchet). Revisar QQ-plot y estabilidad del ajuste.`;
+  if (xi > 0)    return `<strong>&xi; = ${f4(xi)}</strong> &mdash; &xi; > 0 (Fréchet). Distribución de cola sin cota superior finita.`;
+  if (xi > -0.05) return `<strong>&xi; = ${f4(xi)}</strong> &mdash; &xi; &asymp; 0 (Gumbel). Cola de decaimiento exponencial.`;
+  return `<strong>&xi; = ${f4(xi)}</strong> &mdash; &xi; < 0 (Weibull). Cola acotada — las pérdidas tienen un techo finito.`;
 }
 
 function rlYears(days) {
   const y = days / 252;
-  return y >= 2 ? `~${Math.round(y)} anios` : y >= 1 ? `~${y.toFixed(1)} anio(s)` : `${days} dias habiles`;
+  return y >= 2 ? `~${Math.round(y)} años` : y >= 1 ? `~${y.toFixed(1)} año(s)` : `${days} días hábiles`;
 }
 function rlYearsBlocks(tBlocks, bs) {
   return rlYears(tBlocks * bs);
@@ -625,6 +629,24 @@ function rlYearsBlocks(tBlocks, bs) {
 
 function metricCard(label, value, explain) {
   return `<div class="metric"><div class="lbl">${label}</div><div class="val">${value}</div><div class="expl">${explain}</div></div>`;
+}
+
+function renderQuickSummary(R) {
+  const gev = R.gev, gpd = R.gpd, meta = R.metadata;
+  const pc = `${(gev.p_conf * 100).toFixed(1)}`;
+  const qs = $("#quick-summary");
+  qs.innerHTML = `
+    <div style="font-weight:700;margin-bottom:.5rem;color:var(--accent)">Resultados clave — ${meta.source}</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:.5rem">
+      <div><span style="color:var(--muted);font-size:.78rem">VaR ${pc}% (GPD)</span><br><strong>${pct(gpd.var)}</strong></div>
+      <div><span style="color:var(--muted);font-size:.78rem">ES ${pc}% (GPD)</span><br><strong>${pct(gpd.es)}</strong></div>
+      <div><span style="color:var(--muted);font-size:.78rem">Nivel retorno (${gpd.t_days}d)</span><br><strong>${pct(gpd.return_level)}</strong></div>
+      <div><span style="color:var(--muted);font-size:.78rem">&xi; GEV / GPD</span><br><strong>${f4(gev.params.xi)} / ${f4(gpd.params.xi)}</strong></div>
+      <div><span style="color:var(--muted);font-size:.78rem">Observaciones</span><br><strong>${meta.n_observations}</strong></div>
+      <div><span style="color:var(--muted);font-size:.78rem">Período</span><br><strong>${meta.start} → ${meta.end}</strong></div>
+    </div>
+    <div style="margin-top:.5rem;font-size:.78rem;color:var(--muted)">Ver detalle completo más abajo ↓</div>`;
+  qs.style.display = "";
 }
 
 function figCard(b64, caption) {
@@ -647,41 +669,41 @@ function renderResults(R) {
   // Summary
   $("#summary-metrics").innerHTML = [
     metricCard(`VaR ${pc}% (GPD diario)`, pct(gpd.var),
-      `En el ${pc}% de los dias, la perdida diaria no supero este valor.`),
+      `En el ${pc}% de los días, la pérdida diaria no superó este valor.`),
     metricCard(`ES ${pc}% (GPD diario)`, pct(gpd.es),
-      `En los peores dias (cuando se supera el VaR), la perdida promedio fue de este nivel.`),
+      `En los peores días (cuando se supera el VaR), la pérdida promedio fue de este nivel.`),
     metricCard(`Nivel de retorno POT (${gpd.t_days}d)`, pct(gpd.return_level),
-      `Una perdida de este tamano ocurre aprox. una vez cada ${rlYears(gpd.t_days)}.`),
+      `Una pérdida de este tamaño ocurre aprox. una vez cada ${rlYears(gpd.t_days)}.`),
   ].join("");
 
   // GEV
   const bs = cfg.block_size;
   $("#gev-intro").textContent =
-    `Divide la serie de perdidas en bloques de ${bs} dias y analiza el maximo de cada bloque (${gev.n_blocks} bloques).`;
+    `Divide la serie de pérdidas en bloques de ${bs} días y analiza el máximo de cada bloque (${gev.n_blocks} bloques).`;
   $("#gev-metrics").innerHTML = [
     metricCard(`VaR ${pc}% (bloque)`, pct(gev.var),
-      `En el ${pc}% de los bloques de ${bs} dias, la peor perdida no supero este nivel.`),
+      `En el ${pc}% de los bloques de ${bs} días, la peor pérdida no superó este nivel.`),
     metricCard(`ES ${pc}% (bloque)`, pct(gev.es),
-      `En los bloques mas extremos, la peor perdida promedio fue de este nivel.`),
+      `En los bloques más extremos, la peor pérdida promedio fue de este nivel.`),
     metricCard(`Nivel retorno (T=${gev.t_blocks})`, pct(gev.return_level),
       `Ocurre aprox. una vez cada ${rlYearsBlocks(gev.t_blocks, bs)}.`),
   ].join("");
   $("#gev-xi-interp").innerHTML = xiInterp(gev.params.xi);
   $("#gev-figs").innerHTML = [
-    figCard(gev.figures.fit, "Densidad GEV ajustada vs histograma de maximos por bloque."),
+    figCard(gev.figures.fit, "Densidad GEV ajustada vs histograma de máximos por bloque."),
     figCard(gev.figures.qq, "QQ-plot: puntos cerca de la diagonal indican buen ajuste."),
   ].join("");
 
   // GPD
   $("#gpd-intro").textContent =
-    `Analiza las ${gpd.n_excesos} perdidas que superan el umbral ${pct(gpd.threshold).replace('&infin;','inf')} (percentil ${(cfg.quantile_threshold*100).toFixed(0)}%).`;
+    `Analiza las ${gpd.n_excesos} pérdidas que superan el umbral ${pct(gpd.threshold).replace('&infin;','inf')} (percentil ${(cfg.quantile_threshold*100).toFixed(0)}%).`;
   $("#gpd-metrics").innerHTML = [
     metricCard("Umbral", pct(gpd.threshold),
       `${gpd.n_excesos} excesos en la muestra.`),
     metricCard(`VaR ${pc}% (diario)`, pct(gpd.var),
-      `En el ${pc}% de los dias, la perdida no supero este valor.`),
+      `En el ${pc}% de los días, la pérdida no superó este valor.`),
     metricCard(`ES ${pc}% (diario)`, pct(gpd.es),
-      `En los peores dias, la perdida promedio fue de este nivel.`),
+      `En los peores días, la pérdida promedio fue de este nivel.`),
     metricCard(`Nivel retorno (${gpd.t_days}d)`, pct(gpd.return_level),
       `Ocurre aprox. una vez cada ${rlYears(gpd.t_days)}.`),
   ].join("");
@@ -689,19 +711,19 @@ function renderResults(R) {
   $("#gpd-figs").innerHTML = [
     figCard(gpd.figures.fit, "Densidad GPD ajustada vs histograma de excesos."),
     figCard(gpd.figures.qq, "QQ-plot GPD: puntos sobre la diagonal = buen ajuste."),
-    figCard(gpd.figures.pot_points, "Serie de perdidas con umbral. Puntos destacados alimentan el modelo GPD."),
+    figCard(gpd.figures.pot_points, "Serie de pérdidas con umbral. Puntos destacados alimentan el modelo GPD."),
   ].join("");
 
   // Extra figs
   if (R.figures?.losses_hist) {
-    $("#extra-figs").innerHTML = figCard(R.figures.losses_hist, "Distribucion completa de perdidas diarias (L = -R).");
+    $("#extra-figs").innerHTML = figCard(R.figures.losses_hist, "Distribución completa de pérdidas diarias (L = -R).");
   }
 
   // Technical
   $("#tech-content").innerHTML = `
-    <h3>Configuracion</h3>
+    <h3>Configuración</h3>
     <table class="ptable">
-      <tr><th>Parametro</th><th>Valor</th></tr>
+      <tr><th>Parámetro</th><th>Valor</th></tr>
       <tr><td>block_size</td><td>${cfg.block_size}</td></tr>
       <tr><td>quantile_threshold</td><td>${cfg.quantile_threshold}</td></tr>
       <tr><td>p_conf</td><td>${cfg.p_conf}</td></tr>
@@ -712,7 +734,7 @@ function renderResults(R) {
     <table class="ptable">
       <tr><th>Param</th><th>Valor</th></tr>
       <tr><td>&xi; (forma)</td><td>${f6(gev.params.xi)}</td></tr>
-      <tr><td>&mu; (locacion)</td><td>${f6(gev.params.mu)}</td></tr>
+      <tr><td>&mu; (locación)</td><td>${f6(gev.params.mu)}</td></tr>
       <tr><td>&sigma; (escala)</td><td>${f6(gev.params.sigma)}</td></tr>
       <tr><td>N bloques</td><td>${gev.n_blocks}</td></tr>
       <tr><td>VaR ${pc}%</td><td>${f6(gev.var)}</td></tr>
@@ -805,16 +827,16 @@ ${R.diagnostics.length ? `<div class="al"><strong>Advertencias</strong><ul>${R.d
 
 <h2>Resumen ejecutivo</h2>
 <div class="mg">
-  <div class="mc"><div class="l">VaR ${pc}% (GPD)</div><div class="v">${pct(gpd.var)}</div><div class="e">En el ${pc}% de los dias, la perdida no supero este valor.</div></div>
-  <div class="mc"><div class="l">ES ${pc}% (GPD)</div><div class="v">${pct(gpd.es)}</div><div class="e">En los peores dias, la perdida promedio fue de este nivel.</div></div>
+  <div class="mc"><div class="l">VaR ${pc}% (GPD)</div><div class="v">${pct(gpd.var)}</div><div class="e">En el ${pc}% de los días, la pérdida no superó este valor.</div></div>
+  <div class="mc"><div class="l">ES ${pc}% (GPD)</div><div class="v">${pct(gpd.es)}</div><div class="e">En los peores días, la pérdida promedio fue de este nivel.</div></div>
   <div class="mc"><div class="l">Nivel retorno (${gpd.t_days}d)</div><div class="v">${pct(gpd.return_level)}</div><div class="e">Ocurre aprox. una vez cada ${rlYears(gpd.t_days)}.</div></div>
 </div>
 
 <h2>Block Maxima (GEV)</h2>
-<p>Bloques de ${cfg.block_size} dias, ${gev.n_blocks} bloques analizados.</p>
+<p>Bloques de ${cfg.block_size} días, ${gev.n_blocks} bloques analizados.</p>
 <div class="mg">
-  <div class="mc"><div class="l">VaR ${pc}%</div><div class="v">${pct(gev.var)}</div><div class="e">Maximo de bloque.</div></div>
-  <div class="mc"><div class="l">ES ${pc}%</div><div class="v">${pct(gev.es)}</div><div class="e">Expected Shortfall del maximo de bloque.</div></div>
+  <div class="mc"><div class="l">VaR ${pc}%</div><div class="v">${pct(gev.var)}</div><div class="e">Máximo de bloque.</div></div>
+  <div class="mc"><div class="l">ES ${pc}%</div><div class="v">${pct(gev.es)}</div><div class="e">Expected Shortfall del máximo de bloque.</div></div>
   <div class="mc"><div class="l">Nivel retorno (T=${gev.t_blocks})</div><div class="v">${pct(gev.return_level)}</div><div class="e">Ocurre aprox. una vez cada ${rlYearsBlocks(gev.t_blocks, cfg.block_size)}.</div></div>
 </div>
 <div class="interp">${xiInterp(gev.params.xi)}</div>
@@ -837,9 +859,9 @@ ${R.diagnostics.length ? `<div class="al"><strong>Advertencias</strong><ul>${R.d
   <div class="fc">${imgTag(gpd.figures.pot_points,"POT")}<div class="cp">Serie con umbral y excesos.</div></div>
 </div>
 
-${R.figures?.losses_hist ? `<h2>Distribucion de perdidas</h2><div class="fg"><div class="fc">${imgTag(R.figures.losses_hist,"losses")}<div class="cp">Perdidas diarias L = -R.</div></div></div>` : ""}
+${R.figures?.losses_hist ? `<h2>Distribución de pérdidas</h2><div class="fg"><div class="fc">${imgTag(R.figures.losses_hist,"losses")}<div class="cp">Pérdidas diarias L = -R.</div></div></div>` : ""}
 
-<details><summary>Parametros tecnicos completos</summary><div class="inn">
+<details><summary>Parámetros técnicos completos</summary><div class="inn">
 <h3>Config</h3><table class="pt"><tr><th>Param</th><th>Valor</th></tr>
 <tr><td>block_size</td><td>${cfg.block_size}</td></tr>
 <tr><td>quantile_threshold</td><td>${cfg.quantile_threshold}</td></tr>
@@ -862,7 +884,7 @@ ${R.figures?.losses_hist ? `<h2>Distribucion de perdidas</h2><div class="fg"><di
 <tr><td>ES</td><td>${f6(gpd.es)}</td></tr>
 <tr><td>Nivel retorno</td><td>${f6(gpd.return_level)}</td></tr></table>
 </div></details>
-<footer>Reporte generado automaticamente — ${now} | EVT Analysis (Pyodide)</footer>
+<footer>Reporte generado automáticamente — ${now} | EVT Analysis (Pyodide)</footer>
 </body></html>`;
 }
 
@@ -877,7 +899,7 @@ if ("serviceWorker" in navigator) {
    UPDATE BUTTON
    ============================================================ */
 $("#btn-update").addEventListener("click", async () => {
-  if (!confirm("Esto recarga la app con la ultima version. Cualquier analisis en curso se perdera.")) return;
+  if (!confirm("Esto recarga la app con la última versión. Cualquier análisis en curso se perderá.")) return;
   // Unregister all service workers
   if ("serviceWorker" in navigator) {
     const regs = await navigator.serviceWorker.getRegistrations();
