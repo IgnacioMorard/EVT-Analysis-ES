@@ -371,6 +371,13 @@ details.tech .inner { padding: 1rem; }
   </details>
 </div>
 
+<div style="text-align:center;margin-top:2rem;padding-top:1rem;border-top:1px solid var(--border)">
+  <button id="btn-update" style="background:none;border:1px solid var(--border);color:var(--muted);padding:.4rem 1rem;border-radius:6px;cursor:pointer;font-size:.8rem"
+    title="Borra la cache y recarga para obtener la ultima version de la app">
+    &#x1F504; Actualizar a ultima version
+  </button>
+</div>
+
 </div><!-- /container -->
 
 <script>
@@ -865,6 +872,25 @@ ${R.figures?.losses_hist ? `<h2>Distribucion de perdidas</h2><div class="fg"><di
 if ("serviceWorker" in navigator) {
   navigator.serviceWorker.register("./sw.js").catch(() => {});
 }
+
+/* ============================================================
+   UPDATE BUTTON
+   ============================================================ */
+$("#btn-update").addEventListener("click", async () => {
+  if (!confirm("Esto recarga la app con la ultima version. Cualquier analisis en curso se perdera.")) return;
+  // Unregister all service workers
+  if ("serviceWorker" in navigator) {
+    const regs = await navigator.serviceWorker.getRegistrations();
+    await Promise.all(regs.map((r) => r.unregister()));
+  }
+  // Delete all caches
+  if ("caches" in window) {
+    const names = await caches.keys();
+    await Promise.all(names.map((n) => caches.delete(n)));
+  }
+  // Hard reload
+  location.reload(true);
+});
 
 /* ============================================================
    BOOT
