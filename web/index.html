@@ -1,0 +1,875 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>EVT — Analisis de Riesgo Extremo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   DESIGN TOKENS
+   ============================================================ */
+:root {
+  --font: "Inter", system-ui, -apple-system, sans-serif;
+  --bg: #f8f9fb; --surface: #ffffff; --text: #1e293b;
+  --muted: #64748b; --accent: #2563eb; --accent-hover: #1d4ed8;
+  --accent-light: #dbeafe; --border: #e2e8f0;
+  --green: #059669; --red: #dc2626; --yellow: #f59e0b;
+  --radius: 10px; --shadow: 0 1px 3px rgba(0,0,0,.08);
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { font-size: 15px; }
+body {
+  font-family: var(--font); background: var(--bg); color: var(--text);
+  line-height: 1.6; min-height: 100vh;
+}
+a { color: var(--accent); }
+
+/* ============================================================
+   LAYOUT
+   ============================================================ */
+.app-header {
+  background: var(--surface); border-bottom: 1px solid var(--border);
+  padding: 1.2rem 2rem; display: flex; align-items: center; gap: 1rem;
+  position: sticky; top: 0; z-index: 10; box-shadow: var(--shadow);
+}
+.app-header h1 { font-size: 1.25rem; font-weight: 700; }
+.app-header .tag {
+  font-size: .7rem; background: var(--accent-light); color: var(--accent);
+  padding: 2px 8px; border-radius: 999px; font-weight: 600;
+}
+.container { max-width: 1060px; margin: 0 auto; padding: 1.5rem; }
+
+/* ============================================================
+   LOADER OVERLAY
+   ============================================================ */
+#loader-overlay {
+  position: fixed; inset: 0; background: rgba(255,255,255,.92);
+  display: flex; flex-direction: column; align-items: center;
+  justify-content: center; z-index: 100; gap: .75rem;
+  transition: opacity .3s;
+}
+#loader-overlay.hidden { opacity: 0; pointer-events: none; }
+#loader-overlay .spinner {
+  width: 40px; height: 40px; border: 4px solid var(--border);
+  border-top-color: var(--accent); border-radius: 50%;
+  animation: spin .7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+#loader-msg { font-size: .95rem; color: var(--muted); text-align: center; }
+.progress-bar-wrap {
+  width: 280px; height: 6px; background: var(--border); border-radius: 3px;
+  overflow: hidden;
+}
+.progress-bar-wrap .bar {
+  height: 100%; background: var(--accent); width: 0%;
+  transition: width .4s ease;
+}
+
+/* ============================================================
+   CARDS & FORMS
+   ============================================================ */
+.card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 1.5rem;
+  box-shadow: var(--shadow); margin-bottom: 1.25rem;
+}
+.card h2 {
+  font-size: 1.1rem; font-weight: 600; margin-bottom: 1rem;
+  color: var(--accent);
+}
+.card h3 { font-size: .95rem; font-weight: 600; margin: 1.25rem 0 .5rem; }
+
+.form-row {
+  display: flex; flex-wrap: wrap; gap: .75rem; align-items: end;
+  margin-bottom: .75rem;
+}
+.form-group { display: flex; flex-direction: column; gap: .25rem; flex: 1; min-width: 140px; }
+.form-group label { font-size: .78rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+.form-group input, .form-group select {
+  padding: .55rem .7rem; border: 1px solid var(--border); border-radius: 6px;
+  font-family: var(--font); font-size: .9rem; background: var(--bg);
+  transition: border-color .15s;
+}
+.form-group input:focus, .form-group select:focus {
+  outline: none; border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-light);
+}
+
+.tabs { display: flex; gap: 0; margin-bottom: 1rem; }
+.tab-btn {
+  padding: .55rem 1.2rem; border: 1px solid var(--border); background: var(--bg);
+  font-family: var(--font); font-size: .85rem; cursor: pointer;
+  font-weight: 500; color: var(--muted); transition: all .15s;
+}
+.tab-btn:first-child { border-radius: 6px 0 0 6px; }
+.tab-btn:last-child { border-radius: 0 6px 6px 0; }
+.tab-btn.active {
+  background: var(--accent); color: #fff; border-color: var(--accent);
+}
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
+
+.btn {
+  display: inline-flex; align-items: center; gap: .4rem;
+  padding: .6rem 1.4rem; border: none; border-radius: 6px;
+  font-family: var(--font); font-size: .9rem; font-weight: 600;
+  cursor: pointer; transition: all .15s;
+}
+.btn-primary { background: var(--accent); color: #fff; }
+.btn-primary:hover { background: var(--accent-hover); }
+.btn-primary:disabled { opacity: .5; cursor: not-allowed; }
+.btn-secondary { background: var(--bg); color: var(--text); border: 1px solid var(--border); }
+.btn-secondary:hover { background: var(--border); }
+
+.drop-zone {
+  border: 2px dashed var(--border); border-radius: var(--radius);
+  padding: 2rem; text-align: center; color: var(--muted);
+  cursor: pointer; transition: all .2s;
+}
+.drop-zone:hover, .drop-zone.dragover {
+  border-color: var(--accent); background: var(--accent-light);
+}
+.drop-zone .icon { font-size: 2rem; margin-bottom: .5rem; display: block; }
+#csv-file-input { display: none; }
+#csv-file-name { font-size: .85rem; color: var(--green); margin-top: .5rem; font-weight: 500; }
+
+/* status */
+#ticker-status {
+  font-size: .82rem; min-height: 1.2em; margin-top: .25rem;
+}
+.status-loading { color: var(--yellow); }
+.status-ok { color: var(--green); }
+.status-err { color: var(--red); }
+
+/* ============================================================
+   RESULTS
+   ============================================================ */
+#results { display: none; }
+
+.metric-grid {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: .75rem; margin: .75rem 0;
+}
+.metric {
+  background: var(--bg); border: 1px solid var(--border);
+  border-radius: 8px; padding: 1rem;
+}
+.metric .lbl { font-size: .72rem; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); }
+.metric .val { font-size: 1.35rem; font-weight: 700; color: var(--accent); margin: .15rem 0; }
+.metric .expl { font-size: .8rem; color: var(--muted); line-height: 1.45; }
+
+.fig-grid {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+  gap: .75rem; margin: .75rem 0;
+}
+.fig-card {
+  border: 1px solid var(--border); border-radius: 8px; overflow: hidden;
+  background: var(--surface);
+}
+.fig-card img { width: 100%; height: auto; display: block; }
+.fig-card .cap {
+  padding: .5rem .75rem; font-size: .78rem; color: var(--muted);
+  background: var(--bg);
+}
+
+.alert {
+  background: #fef3c7; border-left: 4px solid var(--yellow);
+  border-radius: 8px; padding: .75rem 1rem; margin: .75rem 0;
+  font-size: .88rem;
+}
+.alert ul { padding-left: 1.2rem; margin-top: .25rem; }
+
+.interp {
+  background: var(--accent-light); border-radius: 8px;
+  padding: .75rem 1rem; margin: .5rem 0; font-size: .88rem;
+}
+
+details.tech {
+  margin-top: 1rem; border: 1px solid var(--border);
+  border-radius: 8px; overflow: hidden;
+}
+details.tech summary {
+  background: var(--bg); padding: .65rem 1rem; font-weight: 600;
+  cursor: pointer; font-size: .9rem;
+}
+details.tech .inner { padding: 1rem; }
+.ptable { width: 100%; border-collapse: collapse; font-size: .82rem; }
+.ptable th, .ptable td { text-align: left; padding: .35rem .6rem; border-bottom: 1px solid var(--border); }
+.ptable th { background: var(--bg); font-weight: 600; color: var(--muted); font-size: .75rem; text-transform: uppercase; }
+
+@media (max-width: 640px) {
+  .container { padding: 1rem; }
+  .fig-grid { grid-template-columns: 1fr; }
+  .metric-grid { grid-template-columns: 1fr; }
+  .app-header { padding: .8rem 1rem; }
+}
+</style>
+</head>
+<body>
+
+<!-- ============================================================
+     HEADER
+     ============================================================ -->
+<header class="app-header">
+  <h1>EVT Analyzer</h1>
+  <span class="tag">Pyodide</span>
+</header>
+
+<!-- ============================================================
+     LOADER
+     ============================================================ -->
+<div id="loader-overlay">
+  <div class="spinner"></div>
+  <div id="loader-msg">Preparando entorno Python...</div>
+  <div class="progress-bar-wrap"><div class="bar" id="loader-bar"></div></div>
+  <div style="font-size:.78rem;color:var(--muted);margin-top:.25rem;text-align:center">
+    Primera carga: ~60 MB (numpy, pandas, scipy, matplotlib).<br>
+    Las siguientes cargas usan la cache del browser.
+  </div>
+</div>
+
+<div class="container">
+
+<!-- ============================================================
+     INPUT SECTION
+     ============================================================ -->
+<div class="card" id="input-card">
+  <h2>Datos de entrada</h2>
+
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="tab-csv">CSV local</button>
+    <button class="tab-btn" data-tab="tab-ticker">Ticker (solo local)</button>
+  </div>
+
+  <!-- CSV TAB -->
+  <div class="tab-panel active" id="tab-csv">
+    <div class="drop-zone" id="drop-zone">
+      <span class="icon">&#128196;</span>
+      Arrastra un CSV aqui o <strong>haz click</strong> para seleccionar
+      <br><span style="font-size:.8rem;color:var(--muted)">Necesita columnas de fecha y precio de cierre (se detectan automaticamente)</span>
+      <input type="file" id="csv-file-input" accept=".csv,.tsv,.txt">
+    </div>
+    <div id="csv-file-name"></div>
+  </div>
+
+  <!-- TICKER TAB -->
+  <div class="tab-panel" id="tab-ticker">
+    <div class="alert" style="margin-bottom:.75rem">
+      <strong>Solo funciona en servidor local.</strong>
+      Yahoo Finance bloquea peticiones desde otros dominios (CORS).
+      En GitHub Pages, usa la pestania CSV.
+      <a href="#" id="local-help-toggle" style="margin-left:.25rem">Como correrlo local?</a>
+      <div id="local-help" style="display:none;margin-top:.5rem;font-size:.82rem;background:#fff;padding:.5rem .75rem;border-radius:6px;border:1px solid var(--border)">
+        <code style="display:block;white-space:pre;font-size:.8rem;line-height:1.5">cd web
+python -m http.server 8000</code>
+        Luego abri <a href="http://localhost:8000" target="_blank">http://localhost:8000</a>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group" style="flex:2">
+        <label>Ticker</label>
+        <input type="text" id="ticker-input" placeholder="SPY, AAPL, BTC-USD, ^GSPC, GGAL.BA...">
+      </div>
+      <div class="form-group">
+        <label>Desde</label>
+        <input type="date" id="date-start">
+      </div>
+      <div class="form-group">
+        <label>Hasta</label>
+        <input type="date" id="date-end">
+      </div>
+    </div>
+    <div id="ticker-status"></div>
+  </div>
+
+  <!-- PARAMETERS -->
+  <h3>Parametros del analisis</h3>
+  <div class="form-row">
+    <div class="form-group">
+      <label>Block size</label>
+      <input type="number" id="param-block" value="50" min="5" max="500" step="5">
+    </div>
+    <div class="form-group">
+      <label>Umbral (percentil)</label>
+      <input type="number" id="param-thresh" value="0.95" min="0.5" max="0.999" step="0.01">
+    </div>
+    <div class="form-group">
+      <label>Nivel confianza</label>
+      <input type="number" id="param-pconf" value="0.995" min="0.9" max="0.9999" step="0.001">
+    </div>
+    <div class="form-group">
+      <label>T bloques (GEV)</label>
+      <input type="number" id="param-tblocks" value="100" min="10" max="10000">
+    </div>
+    <div class="form-group">
+      <label>T dias (GPD)</label>
+      <input type="number" id="param-tdays" value="5000" min="100" max="100000">
+    </div>
+  </div>
+
+  <div style="margin-top:1rem; display:flex; gap:.75rem; flex-wrap:wrap;">
+    <button class="btn btn-primary" id="btn-run" disabled>Analizar</button>
+    <button class="btn btn-secondary" id="btn-download" style="display:none">Descargar reporte HTML</button>
+  </div>
+  <div id="run-status" style="font-size:.85rem; margin-top:.5rem; min-height:1.2em;"></div>
+</div>
+
+<!-- ============================================================
+     RESULTS SECTION
+     ============================================================ -->
+<div id="results">
+
+  <!-- Diagnostics -->
+  <div id="diag-box" class="alert" style="display:none">
+    <strong>Advertencias del modelo</strong>
+    <ul id="diag-list"></ul>
+  </div>
+
+  <!-- SUMMARY -->
+  <div class="card" id="res-summary">
+    <h2>Resumen ejecutivo</h2>
+    <div class="metric-grid" id="summary-metrics"></div>
+  </div>
+
+  <!-- GEV -->
+  <div class="card">
+    <h2>Block Maxima (GEV)</h2>
+    <p id="gev-intro"></p>
+    <div class="metric-grid" id="gev-metrics"></div>
+    <h3>Forma de la cola</h3>
+    <div class="interp" id="gev-xi-interp"></div>
+    <h3>Graficos</h3>
+    <div class="fig-grid" id="gev-figs"></div>
+  </div>
+
+  <!-- GPD -->
+  <div class="card">
+    <h2>Peaks Over Threshold (GPD)</h2>
+    <p id="gpd-intro"></p>
+    <div class="metric-grid" id="gpd-metrics"></div>
+    <h3>Forma de la cola</h3>
+    <div class="interp" id="gpd-xi-interp"></div>
+    <h3>Graficos</h3>
+    <div class="fig-grid" id="gpd-figs"></div>
+  </div>
+
+  <!-- Losses dist -->
+  <div class="card">
+    <h2>Distribucion de perdidas</h2>
+    <div class="fig-grid" id="extra-figs"></div>
+  </div>
+
+  <!-- TECHNICAL -->
+  <details class="tech">
+    <summary>Parametros tecnicos completos (click para expandir)</summary>
+    <div class="inner" id="tech-content"></div>
+  </details>
+</div>
+
+</div><!-- /container -->
+
+<script>
+/* ============================================================
+   STATE
+   ============================================================ */
+let worker = null;
+let pyodideReady = false;
+let csvData = null;       // raw CSV text
+let lastResults = null;   // last analysis results
+
+/* ============================================================
+   DOM REFS
+   ============================================================ */
+const $ = (s) => document.querySelector(s);
+const $$ = (s) => document.querySelectorAll(s);
+
+const overlay   = $("#loader-overlay");
+const loaderMsg = $("#loader-msg");
+const loaderBar = $("#loader-bar");
+const btnRun    = $("#btn-run");
+const btnDl     = $("#btn-download");
+const runStatus = $("#run-status");
+const resultsEl = $("#results");
+
+/* ============================================================
+   DEFAULT DATES (last 5 years)
+   ============================================================ */
+(function setDefaults() {
+  const now = new Date();
+  const end = now.toISOString().slice(0, 10);
+  const start = new Date(now.getFullYear() - 5, now.getMonth(), now.getDate())
+    .toISOString().slice(0, 10);
+  $("#date-start").value = start;
+  $("#date-end").value = end;
+})();
+
+/* ============================================================
+   LOCAL HELP TOGGLE
+   ============================================================ */
+$("#local-help-toggle").addEventListener("click", (e) => {
+  e.preventDefault();
+  const el = $("#local-help");
+  el.style.display = el.style.display === "none" ? "block" : "none";
+});
+
+/* ============================================================
+   TABS
+   ============================================================ */
+$$(".tab-btn").forEach((btn) => {
+  btn.addEventListener("click", () => {
+    $$(".tab-btn").forEach((b) => b.classList.remove("active"));
+    $$(".tab-panel").forEach((p) => p.classList.remove("active"));
+    btn.classList.add("active");
+    $(`#${btn.dataset.tab}`).classList.add("active");
+  });
+});
+
+/* ============================================================
+   CSV UPLOAD
+   ============================================================ */
+const dropZone = $("#drop-zone");
+const fileInput = $("#csv-file-input");
+const fileName  = $("#csv-file-name");
+
+dropZone.addEventListener("click", () => fileInput.click());
+dropZone.addEventListener("dragover", (e) => { e.preventDefault(); dropZone.classList.add("dragover"); });
+dropZone.addEventListener("dragleave", () => dropZone.classList.remove("dragover"));
+dropZone.addEventListener("drop", (e) => {
+  e.preventDefault(); dropZone.classList.remove("dragover");
+  if (e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
+});
+fileInput.addEventListener("change", () => {
+  if (fileInput.files.length) handleFile(fileInput.files[0]);
+});
+
+function handleFile(file) {
+  const reader = new FileReader();
+  reader.onload = () => {
+    csvData = reader.result;
+    fileName.textContent = `${file.name} (${(file.size/1024).toFixed(0)} KB)`;
+  };
+  reader.readAsText(file);
+}
+
+/* ============================================================
+   TICKER → YAHOO FINANCE FETCH
+   ============================================================ */
+const tickerInput  = $("#ticker-input");
+const tickerStatus = $("#ticker-status");
+let fetchAbort = null;
+
+tickerInput.addEventListener("keydown", (e) => {
+  if (e.key === "Enter") fetchTicker();
+});
+tickerInput.addEventListener("blur", () => {
+  if (tickerInput.value.trim()) fetchTicker();
+});
+
+async function fetchTicker() {
+  const ticker = tickerInput.value.trim().toUpperCase();
+  if (!ticker) return;
+
+  if (fetchAbort) fetchAbort.abort();
+  fetchAbort = new AbortController();
+
+  tickerStatus.className = "status-loading";
+  tickerStatus.textContent = `Buscando ${ticker}...`;
+  csvData = null;
+
+  const start = $("#date-start").value;
+  const end   = $("#date-end").value;
+  const p1 = Math.floor(new Date(start).getTime() / 1000);
+  const p2 = Math.floor(new Date(end).getTime() / 1000);
+
+  const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(ticker)}`
+    + `?period1=${p1}&period2=${p2}&interval=1d&includeAdjustedClose=true`;
+
+  try {
+    const resp = await fetch(url, {
+      signal: fetchAbort.signal,
+      headers: { "User-Agent": "Mozilla/5.0" },
+    });
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    const json = await resp.json();
+    const result = json.chart?.result?.[0];
+    if (!result) throw new Error("Sin datos");
+
+    const timestamps = result.timestamp;
+    const quotes = result.indicators?.quote?.[0];
+    const adjClose = result.indicators?.adjclose?.[0]?.adjclose || quotes?.close;
+
+    if (!timestamps || !adjClose || timestamps.length < 10) {
+      throw new Error("Datos insuficientes");
+    }
+
+    // Build CSV
+    let csv = "date,close\n";
+    for (let i = 0; i < timestamps.length; i++) {
+      if (adjClose[i] == null) continue;
+      const d = new Date(timestamps[i] * 1000).toISOString().slice(0, 10);
+      csv += `${d},${adjClose[i]}\n`;
+    }
+    csvData = csv;
+
+    tickerStatus.className = "status-ok";
+    tickerStatus.textContent = `${ticker}: ${timestamps.length} dias cargados`;
+  } catch (err) {
+    if (err.name === "AbortError") return;
+    tickerStatus.className = "status-err";
+    const isLocal = location.hostname === "localhost" || location.hostname === "127.0.0.1";
+    tickerStatus.innerHTML = isLocal
+      ? `No se pudo obtener <b>${ticker}</b>. Verifica que el ticker sea valido en Yahoo Finance.`
+      : `No se pudo obtener <b>${ticker}</b>. Yahoo Finance bloquea peticiones desde este dominio (CORS). ` +
+        `<b>Solucion:</b> usa la pestania "CSV local" para subir un archivo, ` +
+        `o corré la app en un servidor local (<code>python -m http.server</code>).`;
+    csvData = null;
+  }
+}
+
+/* ============================================================
+   WORKER MANAGEMENT
+   ============================================================ */
+function initWorker() {
+  worker = new Worker("./worker.js");
+  let steps = 0;
+  const totalSteps = 4;
+
+  worker.onmessage = (e) => {
+    const { type } = e.data;
+
+    if (type === "init-progress") {
+      steps++;
+      loaderMsg.textContent = e.data.msg;
+      loaderBar.style.width = `${Math.min(100, (steps / totalSteps) * 100)}%`;
+    }
+    else if (type === "ready") {
+      pyodideReady = true;
+      overlay.classList.add("hidden");
+      btnRun.disabled = false;
+    }
+    else if (type === "result") {
+      lastResults = e.data.data;
+      renderResults(lastResults);
+      runStatus.className = "status-ok";
+      runStatus.textContent = "Analisis completado.";
+      btnRun.disabled = false;
+      btnDl.style.display = "";
+    }
+    else if (type === "error") {
+      runStatus.className = "status-err";
+      runStatus.textContent = e.data.message;
+      btnRun.disabled = false;
+    }
+  };
+
+  worker.postMessage({ type: "init" });
+}
+
+/* ============================================================
+   RUN ANALYSIS
+   ============================================================ */
+btnRun.addEventListener("click", () => {
+  if (!pyodideReady) return;
+  if (!csvData) {
+    runStatus.className = "status-err";
+    runStatus.textContent = "Primero carga datos (ticker o CSV).";
+    return;
+  }
+  btnRun.disabled = true;
+  runStatus.className = "status-loading";
+  runStatus.textContent = "Ejecutando analisis EVT...";
+  resultsEl.style.display = "none";
+  btnDl.style.display = "none";
+
+  const config = {
+    block_size: parseInt($("#param-block").value),
+    quantile_threshold: parseFloat($("#param-thresh").value),
+    p_conf: parseFloat($("#param-pconf").value),
+    t_blocks: parseInt($("#param-tblocks").value),
+    t_days: parseInt($("#param-tdays").value),
+  };
+
+  worker.postMessage({ type: "run", csvText: csvData, config });
+});
+
+/* ============================================================
+   RENDER RESULTS
+   ============================================================ */
+function pct(v) { return v == null ? "&infin;" : `${(v * 100).toFixed(2)}%`; }
+function f4(v)  { return v == null ? "&infin;" : v.toFixed(4); }
+function f6(v)  { return v == null ? "&infin;" : v.toFixed(6); }
+
+function xiInterp(xi) {
+  if (xi > 0.5)  return `<strong>&xi; = ${f4(xi)}</strong> &mdash; Cola <b>muy pesada</b>. Los eventos extremos son significativamente mas frecuentes de lo que sugiere una distribucion normal.`;
+  if (xi > 0)    return `<strong>&xi; = ${f4(xi)}</strong> &mdash; Cola <b>pesada</b>. Hay mas riesgo de eventos extremos del que asumiria un modelo normal.`;
+  if (xi > -0.05) return `<strong>&xi; = ${f4(xi)}</strong> &mdash; Cola similar a una exponencial (tipo Gumbel). Riesgo extremo moderado.`;
+  return `<strong>&xi; = ${f4(xi)}</strong> &mdash; Cola <b>liviana</b> (acotada). Las perdidas tienen un techo natural.`;
+}
+
+function rlYears(days) {
+  const y = days / 252;
+  return y >= 2 ? `~${Math.round(y)} anios` : y >= 1 ? `~${y.toFixed(1)} anio(s)` : `${days} dias habiles`;
+}
+function rlYearsBlocks(tBlocks, bs) {
+  return rlYears(tBlocks * bs);
+}
+
+function metricCard(label, value, explain) {
+  return `<div class="metric"><div class="lbl">${label}</div><div class="val">${value}</div><div class="expl">${explain}</div></div>`;
+}
+
+function figCard(b64, caption) {
+  return `<div class="fig-card"><img src="data:image/png;base64,${b64}" alt="chart"><div class="cap">${caption}</div></div>`;
+}
+
+function renderResults(R) {
+  const gev = R.gev, gpd = R.gpd, meta = R.metadata, cfg = meta.config_used;
+  const pc = `${(gev.p_conf * 100).toFixed(1)}`;
+
+  // Diagnostics
+  const diagBox = $("#diag-box"), diagList = $("#diag-list");
+  if (R.diagnostics.length) {
+    diagList.innerHTML = R.diagnostics.map(d => `<li>${d}</li>`).join("");
+    diagBox.style.display = "";
+  } else {
+    diagBox.style.display = "none";
+  }
+
+  // Summary
+  $("#summary-metrics").innerHTML = [
+    metricCard(`VaR ${pc}% (GPD diario)`, pct(gpd.var),
+      `En el ${pc}% de los dias, la perdida diaria no supero este valor.`),
+    metricCard(`ES ${pc}% (GPD diario)`, pct(gpd.es),
+      `En los peores dias (cuando se supera el VaR), la perdida promedio fue de este nivel.`),
+    metricCard(`Nivel de retorno POT (${gpd.t_days}d)`, pct(gpd.return_level),
+      `Una perdida de este tamano ocurre aprox. una vez cada ${rlYears(gpd.t_days)}.`),
+  ].join("");
+
+  // GEV
+  const bs = cfg.block_size;
+  $("#gev-intro").textContent =
+    `Divide la serie de perdidas en bloques de ${bs} dias y analiza el maximo de cada bloque (${gev.n_blocks} bloques).`;
+  $("#gev-metrics").innerHTML = [
+    metricCard(`VaR ${pc}% (bloque)`, pct(gev.var),
+      `En el ${pc}% de los bloques de ${bs} dias, la peor perdida no supero este nivel.`),
+    metricCard(`ES ${pc}% (bloque)`, pct(gev.es),
+      `En los bloques mas extremos, la peor perdida promedio fue de este nivel.`),
+    metricCard(`Nivel retorno (T=${gev.t_blocks})`, pct(gev.return_level),
+      `Ocurre aprox. una vez cada ${rlYearsBlocks(gev.t_blocks, bs)}.`),
+  ].join("");
+  $("#gev-xi-interp").innerHTML = xiInterp(gev.params.xi);
+  $("#gev-figs").innerHTML = [
+    figCard(gev.figures.fit, "Densidad GEV ajustada vs histograma de maximos por bloque."),
+    figCard(gev.figures.qq, "QQ-plot: puntos cerca de la diagonal indican buen ajuste."),
+  ].join("");
+
+  // GPD
+  $("#gpd-intro").textContent =
+    `Analiza las ${gpd.n_excesos} perdidas que superan el umbral ${pct(gpd.threshold).replace('&infin;','inf')} (percentil ${(cfg.quantile_threshold*100).toFixed(0)}%).`;
+  $("#gpd-metrics").innerHTML = [
+    metricCard("Umbral", pct(gpd.threshold),
+      `${gpd.n_excesos} excesos en la muestra.`),
+    metricCard(`VaR ${pc}% (diario)`, pct(gpd.var),
+      `En el ${pc}% de los dias, la perdida no supero este valor.`),
+    metricCard(`ES ${pc}% (diario)`, pct(gpd.es),
+      `En los peores dias, la perdida promedio fue de este nivel.`),
+    metricCard(`Nivel retorno (${gpd.t_days}d)`, pct(gpd.return_level),
+      `Ocurre aprox. una vez cada ${rlYears(gpd.t_days)}.`),
+  ].join("");
+  $("#gpd-xi-interp").innerHTML = xiInterp(gpd.params.xi);
+  $("#gpd-figs").innerHTML = [
+    figCard(gpd.figures.fit, "Densidad GPD ajustada vs histograma de excesos."),
+    figCard(gpd.figures.qq, "QQ-plot GPD: puntos sobre la diagonal = buen ajuste."),
+    figCard(gpd.figures.pot_points, "Serie de perdidas con umbral. Puntos destacados alimentan el modelo GPD."),
+  ].join("");
+
+  // Extra figs
+  if (R.figures?.losses_hist) {
+    $("#extra-figs").innerHTML = figCard(R.figures.losses_hist, "Distribucion completa de perdidas diarias (L = -R).");
+  }
+
+  // Technical
+  $("#tech-content").innerHTML = `
+    <h3>Configuracion</h3>
+    <table class="ptable">
+      <tr><th>Parametro</th><th>Valor</th></tr>
+      <tr><td>block_size</td><td>${cfg.block_size}</td></tr>
+      <tr><td>quantile_threshold</td><td>${cfg.quantile_threshold}</td></tr>
+      <tr><td>p_conf</td><td>${cfg.p_conf}</td></tr>
+      <tr><td>t_blocks</td><td>${cfg.t_blocks}</td></tr>
+      <tr><td>t_days</td><td>${cfg.t_days}</td></tr>
+    </table>
+    <h3>GEV</h3>
+    <table class="ptable">
+      <tr><th>Param</th><th>Valor</th></tr>
+      <tr><td>&xi; (forma)</td><td>${f6(gev.params.xi)}</td></tr>
+      <tr><td>&mu; (locacion)</td><td>${f6(gev.params.mu)}</td></tr>
+      <tr><td>&sigma; (escala)</td><td>${f6(gev.params.sigma)}</td></tr>
+      <tr><td>N bloques</td><td>${gev.n_blocks}</td></tr>
+      <tr><td>VaR ${pc}%</td><td>${f6(gev.var)}</td></tr>
+      <tr><td>ES ${pc}%</td><td>${f6(gev.es)}</td></tr>
+      <tr><td>Nivel retorno</td><td>${f6(gev.return_level)}</td></tr>
+    </table>
+    <h3>GPD</h3>
+    <table class="ptable">
+      <tr><th>Param</th><th>Valor</th></tr>
+      <tr><td>&xi; (forma)</td><td>${f6(gpd.params.xi)}</td></tr>
+      <tr><td>&beta; (escala)</td><td>${f6(gpd.params.beta)}</td></tr>
+      <tr><td>Umbral u</td><td>${f6(gpd.threshold)}</td></tr>
+      <tr><td>N excesos</td><td>${gpd.n_excesos}</td></tr>
+      <tr><td>P(X>u)</td><td>${f6(gpd.p_u)}</td></tr>
+      <tr><td>VaR ${pc}%</td><td>${f6(gpd.var)}</td></tr>
+      <tr><td>ES ${pc}%</td><td>${f6(gpd.es)}</td></tr>
+      <tr><td>Nivel retorno</td><td>${f6(gpd.return_level)}</td></tr>
+    </table>
+    <h3>Datos</h3>
+    <table class="ptable">
+      <tr><td>Fuente</td><td>${meta.source}</td></tr>
+      <tr><td>Observaciones</td><td>${meta.n_observations}</td></tr>
+      <tr><td>Inicio</td><td>${meta.start}</td></tr>
+      <tr><td>Fin</td><td>${meta.end}</td></tr>
+    </table>`;
+
+  resultsEl.style.display = "";
+  resultsEl.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+/* ============================================================
+   DOWNLOAD REPORT
+   ============================================================ */
+btnDl.addEventListener("click", () => {
+  if (!lastResults) return;
+  const html = buildReportHtml(lastResults);
+  const blob = new Blob([html], { type: "text/html;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `evt_report_${lastResults.metadata.source.replace(/[^a-zA-Z0-9]/g,"_")}.html`;
+  a.click();
+  URL.revokeObjectURL(url);
+});
+
+function buildReportHtml(R) {
+  const gev = R.gev, gpd = R.gpd, meta = R.metadata, cfg = meta.config_used;
+  const pc = `${(gev.p_conf * 100).toFixed(1)}`;
+  const now = new Date().toLocaleString("es-AR");
+
+  function imgTag(b64, alt) { return `<img src="data:image/png;base64,${b64}" alt="${alt}" style="width:100%;height:auto;display:block">`; }
+
+  return `<!DOCTYPE html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Reporte EVT — ${meta.source}</title>
+<style>
+:root{--bg:#fff;--bg2:#f7f8fa;--text:#1e293b;--muted:#64748b;--accent:#2563eb;--border:#e2e8f0;--radius:8px}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;color:var(--text);background:var(--bg);line-height:1.6;max-width:960px;margin:0 auto;padding:2rem 1.5rem 4rem}
+h1{font-size:1.75rem;font-weight:700;margin-bottom:.25rem}
+h2{font-size:1.3rem;font-weight:600;margin-top:2.5rem;margin-bottom:1rem;padding-bottom:.4rem;border-bottom:2px solid var(--accent);color:var(--accent)}
+h3{font-size:1rem;font-weight:600;margin:1.25rem 0 .5rem}
+p,li{margin-bottom:.5rem}
+.sub{color:var(--muted);font-size:.95rem;margin-bottom:2rem}
+.mg{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:.75rem;margin:.75rem 0}
+.mc{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:1rem}
+.mc .l{font-size:.75rem;text-transform:uppercase;letter-spacing:.04em;color:var(--muted)}
+.mc .v{font-size:1.4rem;font-weight:700;color:var(--accent);margin:.15rem 0}
+.mc .e{font-size:.82rem;color:var(--muted);line-height:1.45}
+.fg{display:grid;grid-template-columns:repeat(auto-fit,minmax(400px,1fr));gap:.75rem;margin:.75rem 0}
+.fc{border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
+.fc img{width:100%;height:auto;display:block}
+.fc .cp{padding:.45rem .7rem;font-size:.78rem;color:var(--muted);background:var(--bg2)}
+.al{background:#fef3c7;border-left:4px solid #f59e0b;border-radius:var(--radius);padding:.75rem 1rem;margin:.75rem 0;font-size:.88rem}
+.al ul{padding-left:1.2rem;margin-top:.25rem}
+.interp{background:#dbeafe;border-radius:var(--radius);padding:.75rem 1rem;margin:.5rem 0;font-size:.88rem}
+details{margin-top:2rem;border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
+details summary{background:var(--bg2);padding:.7rem 1rem;font-weight:600;cursor:pointer;font-size:.9rem}
+details .inn{padding:1rem}
+.pt{width:100%;border-collapse:collapse;font-size:.82rem;margin-top:.5rem}
+.pt th,.pt td{text-align:left;padding:.35rem .6rem;border-bottom:1px solid var(--border)}
+.pt th{background:var(--bg2);font-weight:600;color:var(--muted);font-size:.73rem;text-transform:uppercase}
+footer{margin-top:3rem;padding-top:1rem;border-top:1px solid var(--border);font-size:.8rem;color:var(--muted);text-align:center}
+@media(max-width:600px){body{padding:1rem}.fg{grid-template-columns:1fr}.mg{grid-template-columns:1fr}}
+</style></head><body>
+<h1>Reporte de Riesgo Extremo (EVT)</h1>
+<p class="sub">Fuente: <strong>${meta.source}</strong> | ${meta.n_observations} obs | ${meta.start} &rarr; ${meta.end} | Generado: ${now}</p>
+
+${R.diagnostics.length ? `<div class="al"><strong>Advertencias</strong><ul>${R.diagnostics.map(d=>`<li>${d}</li>`).join("")}</ul></div>` : ""}
+
+<h2>Resumen ejecutivo</h2>
+<div class="mg">
+  <div class="mc"><div class="l">VaR ${pc}% (GPD)</div><div class="v">${pct(gpd.var)}</div><div class="e">En el ${pc}% de los dias, la perdida no supero este valor.</div></div>
+  <div class="mc"><div class="l">ES ${pc}% (GPD)</div><div class="v">${pct(gpd.es)}</div><div class="e">En los peores dias, la perdida promedio fue de este nivel.</div></div>
+  <div class="mc"><div class="l">Nivel retorno (${gpd.t_days}d)</div><div class="v">${pct(gpd.return_level)}</div><div class="e">Ocurre aprox. una vez cada ${rlYears(gpd.t_days)}.</div></div>
+</div>
+
+<h2>Block Maxima (GEV)</h2>
+<p>Bloques de ${cfg.block_size} dias, ${gev.n_blocks} bloques analizados.</p>
+<div class="mg">
+  <div class="mc"><div class="l">VaR ${pc}%</div><div class="v">${pct(gev.var)}</div><div class="e">Maximo de bloque.</div></div>
+  <div class="mc"><div class="l">ES ${pc}%</div><div class="v">${pct(gev.es)}</div><div class="e">Expected Shortfall del maximo de bloque.</div></div>
+  <div class="mc"><div class="l">Nivel retorno (T=${gev.t_blocks})</div><div class="v">${pct(gev.return_level)}</div><div class="e">Ocurre aprox. una vez cada ${rlYearsBlocks(gev.t_blocks, cfg.block_size)}.</div></div>
+</div>
+<div class="interp">${xiInterp(gev.params.xi)}</div>
+<div class="fg">
+  <div class="fc">${imgTag(gev.figures.fit,"GEV fit")}<div class="cp">GEV ajustada vs histograma.</div></div>
+  <div class="fc">${imgTag(gev.figures.qq,"GEV QQ")}<div class="cp">QQ-plot GEV.</div></div>
+</div>
+
+<h2>Peaks Over Threshold (GPD)</h2>
+<p>Umbral: percentil ${(cfg.quantile_threshold*100).toFixed(0)}% = ${pct(gpd.threshold).replace('&infin;','inf')} | ${gpd.n_excesos} excesos.</p>
+<div class="mg">
+  <div class="mc"><div class="l">VaR ${pc}%</div><div class="v">${pct(gpd.var)}</div><div class="e">VaR diario via POT.</div></div>
+  <div class="mc"><div class="l">ES ${pc}%</div><div class="v">${pct(gpd.es)}</div><div class="e">Expected Shortfall diario via POT.</div></div>
+  <div class="mc"><div class="l">Nivel retorno (${gpd.t_days}d)</div><div class="v">${pct(gpd.return_level)}</div><div class="e">Ocurre aprox. una vez cada ${rlYears(gpd.t_days)}.</div></div>
+</div>
+<div class="interp">${xiInterp(gpd.params.xi)}</div>
+<div class="fg">
+  <div class="fc">${imgTag(gpd.figures.fit,"GPD fit")}<div class="cp">GPD ajustada vs histograma de excesos.</div></div>
+  <div class="fc">${imgTag(gpd.figures.qq,"GPD QQ")}<div class="cp">QQ-plot GPD.</div></div>
+  <div class="fc">${imgTag(gpd.figures.pot_points,"POT")}<div class="cp">Serie con umbral y excesos.</div></div>
+</div>
+
+${R.figures?.losses_hist ? `<h2>Distribucion de perdidas</h2><div class="fg"><div class="fc">${imgTag(R.figures.losses_hist,"losses")}<div class="cp">Perdidas diarias L = -R.</div></div></div>` : ""}
+
+<details><summary>Parametros tecnicos completos</summary><div class="inn">
+<h3>Config</h3><table class="pt"><tr><th>Param</th><th>Valor</th></tr>
+<tr><td>block_size</td><td>${cfg.block_size}</td></tr>
+<tr><td>quantile_threshold</td><td>${cfg.quantile_threshold}</td></tr>
+<tr><td>p_conf</td><td>${cfg.p_conf}</td></tr>
+<tr><td>t_blocks</td><td>${cfg.t_blocks}</td></tr>
+<tr><td>t_days</td><td>${cfg.t_days}</td></tr></table>
+<h3>GEV</h3><table class="pt"><tr><th>Param</th><th>Valor</th></tr>
+<tr><td>&xi;</td><td>${f6(gev.params.xi)}</td></tr>
+<tr><td>&mu;</td><td>${f6(gev.params.mu)}</td></tr>
+<tr><td>&sigma;</td><td>${f6(gev.params.sigma)}</td></tr>
+<tr><td>VaR</td><td>${f6(gev.var)}</td></tr>
+<tr><td>ES</td><td>${f6(gev.es)}</td></tr>
+<tr><td>Nivel retorno</td><td>${f6(gev.return_level)}</td></tr></table>
+<h3>GPD</h3><table class="pt"><tr><th>Param</th><th>Valor</th></tr>
+<tr><td>&xi;</td><td>${f6(gpd.params.xi)}</td></tr>
+<tr><td>&beta;</td><td>${f6(gpd.params.beta)}</td></tr>
+<tr><td>Umbral</td><td>${f6(gpd.threshold)}</td></tr>
+<tr><td>N excesos</td><td>${gpd.n_excesos}</td></tr>
+<tr><td>VaR</td><td>${f6(gpd.var)}</td></tr>
+<tr><td>ES</td><td>${f6(gpd.es)}</td></tr>
+<tr><td>Nivel retorno</td><td>${f6(gpd.return_level)}</td></tr></table>
+</div></details>
+<footer>Reporte generado automaticamente — ${now} | EVT Analysis (Pyodide)</footer>
+</body></html>`;
+}
+
+/* ============================================================
+   SERVICE WORKER REGISTRATION
+   ============================================================ */
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("./sw.js").catch(() => {});
+}
+
+/* ============================================================
+   BOOT
+   ============================================================ */
+initWorker();
+</script>
+</body>
+</html>
