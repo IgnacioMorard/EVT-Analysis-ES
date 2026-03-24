@@ -225,8 +225,7 @@ details.tech .inner { padding: 1rem; }
   <div id="loader-msg">Preparando entorno Python...</div>
   <div class="progress-bar-wrap"><div class="bar" id="loader-bar"></div></div>
   <div style="font-size:.78rem;color:var(--muted);margin-top:.25rem;text-align:center">
-    Primera carga: ~60 MB (numpy, pandas, scipy, matplotlib).<br>
-    Las siguientes cargas usan la cache del browser.
+    Descarga inicial: ~60 MB (numpy, pandas, scipy, matplotlib).
   </div>
 </div>
 
@@ -389,6 +388,7 @@ details.tech .inner { padding: 1rem; }
 let worker = null;
 let pyodideReady = false;
 let csvData = null;       // raw CSV text
+let sourceName = null;    // ticker or CSV filename
 let lastResults = null;   // last analysis results
 
 /* ============================================================
@@ -451,6 +451,7 @@ function handleFile(file) {
   const reader = new FileReader();
   reader.onload = () => {
     csvData = reader.result;
+    sourceName = file.name.replace(/\.[^.]+$/, "");
     fileName.textContent = `${file.name} (${(file.size/1024).toFixed(0)} KB)`;
   };
   reader.readAsText(file);
@@ -485,6 +486,7 @@ async function fetchTicker() {
   tickerStatus.className = "status-loading";
   tickerStatus.textContent = `Buscando ${ticker}...`;
   csvData = null;
+  sourceName = null;
 
   // Calcular rango como "Ny" (Yahoo range param)
   const startD = new Date($("#date-start").value);
@@ -522,6 +524,7 @@ async function fetchTicker() {
       csv += `${d},${adjClose[i]}\n`;
     }
     csvData = csv;
+    sourceName = ticker;
 
     tickerStatus.className = "status-ok";
     tickerStatus.textContent = `${ticker}: ${timestamps.length} días cargados`;
@@ -534,6 +537,7 @@ async function fetchTicker() {
       `o el proxy (corsproxy.io) puede estar temporalmente caido. ` +
       `<b>Alternativa:</b> usá la pestaña "CSV local".`;
     csvData = null;
+    sourceName = null;
   }
 }
 
@@ -602,7 +606,7 @@ btnRun.addEventListener("click", () => {
     t_days: parseInt($("#param-tdays").value),
   };
 
-  worker.postMessage({ type: "run", csvText: csvData, config });
+  worker.postMessage({ type: "run", csvText: csvData, config, sourceName: sourceName || "CSV" });
 });
 
 /* ============================================================
@@ -645,7 +649,7 @@ function renderQuickSummary(R) {
       <div><span style="color:var(--muted);font-size:.78rem">Observaciones</span><br><strong>${meta.n_observations}</strong></div>
       <div><span style="color:var(--muted);font-size:.78rem">Período</span><br><strong>${meta.start} → ${meta.end}</strong></div>
     </div>
-    <div style="margin-top:.5rem;font-size:.78rem;color:var(--muted)">Ver detalle completo más abajo ↓</div>`;
+    <div style="margin-top:.5rem;font-size:.78rem;color:var(--muted)">Detalle completo disponible en el reporte descargable</div>`;
   qs.style.display = "";
 }
 
@@ -775,7 +779,8 @@ btnDl.addEventListener("click", () => {
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  a.download = `evt_report_${lastResults.metadata.source.replace(/[^a-zA-Z0-9]/g,"_")}.html`;
+  const safeName = lastResults.metadata.source.replace(/[^a-zA-Z0-9._-]/g,"_").replace(/_+/g,"_");
+  a.download = `evt_report_${safeName}.html`;
   a.click();
   URL.revokeObjectURL(url);
 });

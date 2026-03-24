@@ -206,7 +206,7 @@ def _fig_losses_hist(losses: pd.Series) -> str:
 # MAIN ANALYSIS FUNCTION
 # ===================================================================
 
-def run_analysis(csv_text: str, config: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+def run_analysis(csv_text: str, config: Optional[Dict[str, Any]] = None, source_name: Optional[str] = None) -> Dict[str, Any]:
     """
     Entry point called from JavaScript.
 
@@ -281,7 +281,7 @@ def run_analysis(csv_text: str, config: Optional[Dict[str, Any]] = None) -> Dict
             f"Serie corta: {n_obs} observaciones (se recomiendan >= 200)."
         )
 
-    source_name = str(prices.name) if prices.name else "CSV"
+    source_name = source_name or (str(prices.name) if prices.name else "CSV")
     start_dt = str(returns.index.min())[:10]
     end_dt = str(returns.index.max())[:10]
 

@@ -35,17 +35,18 @@ async function initPyodide() {
   postMessage({ type: "ready" });
 }
 
-async function runAnalysis(csvText, config) {
+async function runAnalysis(csvText, config, sourceName) {
   try {
     // Put CSV text and config into Python namespace
     pyodide.globals.set("_csv_text", csvText);
     pyodide.globals.set("_config_js", pyodide.toPy(config));
+    pyodide.globals.set("_source_name", sourceName || "CSV");
 
     const resultProxy = await pyodide.runPythonAsync(`
 import json, math
 
 _cfg = dict(_config_js) if _config_js else {}
-_result = run_analysis(_csv_text, _cfg)
+_result = run_analysis(_csv_text, _cfg, _source_name)
 
 # Convert to JSON-safe dict
 def _to_json_safe(obj):
@@ -79,6 +80,6 @@ onmessage = async (e) => {
       postMessage({ type: "error", message: "Error inicializando Pyodide: " + String(err) });
     }
   } else if (type === "run") {
-    await runAnalysis(e.data.csvText, e.data.config);
+    await runAnalysis(e.data.csvText, e.data.config, e.data.sourceName);
   }
 };
