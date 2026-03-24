@@ -3,8 +3,6 @@
 > Analisis de riesgo extremo con Block Maxima (GEV) y Peaks Over Threshold (GPD).
 > Modulo Python + aplicacion web que corre en el browser via Pyodide.
 
-[SCREENSHOT]
-
 **[Abrir demo en vivo (GitHub Pages)](https://IgnacioMorard.github.io/EVT-Analysis-ES/web/)**
 
 ---
